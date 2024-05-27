@@ -2,116 +2,103 @@ import os
 print (os.getcwd())
 import pyautogui
 from time import sleep
-#from image import *
 from PIL import Image
 
 photos_folder = r'/images'
 bombs = []
 bounds = []
 bound_centers = []
+bound_tuple = (0, 0)
 
-""" Testing with pyautogui
-screenWidth, screenHeight = pyautogui.size()
-print(screenWidth, screenHeight)
-
-currentMouseX, currentMouseY = pyautogui.position()
-print(currentMouseX, currentMouseY)
-
-pyautogui.moveTo(100, 150)
-
-pyautogui.click()
-
-"""
 
 def setup():
   """
   sets up the game by opening the images then
-  appending them to an array, one for bombs, one for bounds.
+  appending them (and their color, as a tuple) 
+  to an array: one for bombs, one for bounds.
+
+  Returns: a tuple that is the x,y coords of the black bound as a tuple with the word "black",
+           a tuple that is the x,y cords of the red bound as a tuple with the word "red"
   """
   black_bomb = Image.open(r'./images/BlackBomb.png')
   red_bomb = Image.open(r'./images/RedBomb.png')
 
-  #black_bomb = Image.open(r'./images/BlackBombFullQuality.png')
-  #red_bomb = Image.open(r'./images/RedBombFullQuality.png')
-  
   bombs.append((black_bomb, "black"))
   bombs.append((red_bomb, "red"))
 
   black_bound = Image.open(r'./images/BlackBombBounds.png')
   red_bound = Image.open(r'./images/RedBombBounds.png')
 
-  #black_bound = Image.open(r'./images/BlackBombBoundsFullQuality.png')
-  #red_bound = Image.open(r'./images/RedBombBoundsFullQuality.png')
-  
   bounds.append((black_bound, "black"))
   bounds.append((red_bound, "red"))
-
-def play_game():
-
-  touch_screen = pyautogui.screenshot(region=(590, 532, 744, 548))
+  
   for bound in bounds:
-      # Can do this by just knowing first is black and second is red?
-      #found_bound = pyautogui.locate(bound, touch_screen, confidence=0.3)
+    # Find the center of the bounds the bombs belong in, then append them to an
+    # array with their color, then add those to the tuple for the bounds
+    # This needed to be created in set-up, because the bombs would get too crowded
+    # and then it was no longer detectable
     found_bound = pyautogui.locateOnScreen(bound[0], confidence=0.47)
-    print("Color of bound is " + bound[1])
+    print(f"Found the {bound[1]} bound")
+
     center_of_bound = pyautogui.center(found_bound)
-
-      #pyautogui.moveTo(center_of_bound[0], center_of_bound[1])
-      #print("Box")
-      #print(center_of_bound)
     bound_centers.append((center_of_bound, bound[1]))
-      #sleep(1)
   bound_tuple = (bound_centers[0], bound_centers[1])
-#  print(bound_tuple)
+  return bound_tuple
 
+def play_game(bound_tuple):
+  """
+    called every iteration of loop, will look for a bomb,
+    and if it finds one, will drag it to the corresponding
+    bound that matches it's color
+
+    input: the bound tuple with the center x,y pos that was 
+           created during setup
+  """
+
+  #touch_screen = pyautogui.screenshot(region=(590, 532, 744, 548))
+  
   for bomb in bombs:
-    #found_bomb = pyautogui.locate(bomb, touch_screen, confidence=0.5)
+    bomb_color = bomb[1]
     try:
-      found_bomb = pyautogui.locateOnScreen(bomb[0], confidence=0.94)
-      bomb_color = bomb[1]
-      print("Color is " + bomb[1])
+      # Find a bomb of the specified color in the tuple, then move
+      # the mouse to the center of it
+      found_bomb = pyautogui.locateOnScreen(bomb[0], confidence=0.95)
+      print("Color is " + bomb_color)
       center_of_bomb = pyautogui.center(found_bomb)
-      #print(center_of_bomb[0], center_of_bomb[1])
       pyautogui.moveTo(center_of_bomb[0], center_of_bomb[1])
-      #sleep(1)
     except:
       # Since ImageNotFoundError is raised if no image is on screen and halts program,
-      # just catch and handle the error (sometimes there might be no red bombs but that's okay)
-      print("Could not find " + bomb[1])
+      # just catch and handle the error to prevent program crashing
+      # (i.e. sometimes there might be no red bombs but that's okay)
+      print("Could not find " + bomb_color)
       continue
-    #print(pyautogui.position())
-    #print(bound_tuple[0][0], bound_tuple[0][1])
-    #pyautogui.drag(bound_tuple[0][0]-center_of_bomb[0], bound_tuple[0][1]-center_of_bomb[1], duration=0.5)
     
-    #bound_x = bound_tuple[0][0]
-    #pyautogui.dragTo(bound_tuple[0][0][0], bound_tuple[0][0][1], button='left', duration=0.25)
     # These two get black, red respecitvely: bound_tuple[0][1], bound_tuple[1][1]
     
-    #print(pyautogui.position())
-    #print("Bomb")
-    #print(found_bomb)
     for bound in bound_tuple:
+      # get all the info for both bounds, then look at our current
+      # bomb's color, and move the bomb to its respective bound
       bound_pos, bound_color = bound
       bound_x, bound_y = bound_pos
       if bomb_color == bound_color:
         print("Match with " + bomb_color, bound_color, bound_pos)  
-        pyautogui.dragTo(bound_x, bound_y, button='left', duration=0.25)
-    
+        # below is a way to use the "drag" feature but that took too long,
+        # and i got better results by just snapping the bomb to the goal
+        #pyautogui.dragTo(bound_x, bound_y, button='left', duration=0.45)
+        pyautogui.mouseDown(_pause=False)
+        sleep(0.05)
+        pyautogui.moveTo(bound_x, bound_y)
+        sleep(0.05)
+        pyautogui.mouseUp(_pause=False)
 
+# Initialize, give time to set up game after running program
+for i in range(4,-1,-1):
 
-"""
-print("3...")
-sleep(1)
-print("2...")
-sleep(1)
-print("1...")
-sleep(1)
+  print(str(i)+"...")
+  sleep(1)
 
-"""
-
-sleep(4)
-setup()
+b = setup()
 a = 0
-while a < 100:
-  play_game()
-
+while a < 500:
+  play_game(b)
+  a+=1
