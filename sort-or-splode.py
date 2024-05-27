@@ -34,8 +34,8 @@ def setup():
   #black_bomb = Image.open(r'./images/BlackBombFullQuality.png')
   #red_bomb = Image.open(r'./images/RedBombFullQuality.png')
   
-  bombs.append(black_bomb)
-  bombs.append(red_bomb)
+  bombs.append((black_bomb, "black"))
+  bombs.append((red_bomb, "red"))
 
   black_bound = Image.open(r'./images/BlackBombBounds.png')
   red_bound = Image.open(r'./images/RedBombBounds.png')
@@ -43,39 +43,59 @@ def setup():
   #black_bound = Image.open(r'./images/BlackBombBoundsFullQuality.png')
   #red_bound = Image.open(r'./images/RedBombBoundsFullQuality.png')
   
-  bounds.append(black_bound)
-  bounds.append(red_bound)
+  bounds.append((black_bound, "black"))
+  bounds.append((red_bound, "red"))
 
 def play_game():
 
   touch_screen = pyautogui.screenshot(region=(590, 532, 744, 548))
   for bound in bounds:
-    #TODO: Need a way to separate the red / black bounds
-    # Can do this by just knowing first is black and second is red?
-    #found_bound = pyautogui.locate(bound, touch_screen, confidence=0.3)
-    found_bound = pyautogui.locateOnScreen(bound, confidence=0.4)
+      # Can do this by just knowing first is black and second is red?
+      #found_bound = pyautogui.locate(bound, touch_screen, confidence=0.3)
+    found_bound = pyautogui.locateOnScreen(bound[0], confidence=0.47)
+    print("Color of bound is " + bound[1])
     center_of_bound = pyautogui.center(found_bound)
-    #print("Box")
-    #print(center_of_bound)
-    bound_centers.append(center_of_bound)
+
+      #pyautogui.moveTo(center_of_bound[0], center_of_bound[1])
+      #print("Box")
+      #print(center_of_bound)
+    bound_centers.append((center_of_bound, bound[1]))
+      #sleep(1)
   bound_tuple = (bound_centers[0], bound_centers[1])
 #  print(bound_tuple)
 
   for bomb in bombs:
-    # Should alternate black / red / black / red / ...
     #found_bomb = pyautogui.locate(bomb, touch_screen, confidence=0.5)
-    found_bomb = pyautogui.locateOnScreen(bomb, confidence=0.6)
-    center_of_bomb = pyautogui.center(found_bomb)
-    #print(center_of_bomb[0], center_of_bomb[1])
-    pyautogui.moveTo(center_of_bomb[0], center_of_bomb[1])
-
-    print(pyautogui.position())
+    try:
+      found_bomb = pyautogui.locateOnScreen(bomb[0], confidence=0.94)
+      bomb_color = bomb[1]
+      print("Color is " + bomb[1])
+      center_of_bomb = pyautogui.center(found_bomb)
+      #print(center_of_bomb[0], center_of_bomb[1])
+      pyautogui.moveTo(center_of_bomb[0], center_of_bomb[1])
+      #sleep(1)
+    except:
+      # Since ImageNotFoundError is raised if no image is on screen and halts program,
+      # just catch and handle the error (sometimes there might be no red bombs but that's okay)
+      print("Could not find " + bomb[1])
+      continue
+    #print(pyautogui.position())
     #print(bound_tuple[0][0], bound_tuple[0][1])
     #pyautogui.drag(bound_tuple[0][0]-center_of_bomb[0], bound_tuple[0][1]-center_of_bomb[1], duration=0.5)
-    pyautogui.dragTo(bound_tuple[0][0], bound_tuple[0][1], button='left', duration=0.2)
-    print(pyautogui.position())
+    
+    #bound_x = bound_tuple[0][0]
+    #pyautogui.dragTo(bound_tuple[0][0][0], bound_tuple[0][0][1], button='left', duration=0.25)
+    # These two get black, red respecitvely: bound_tuple[0][1], bound_tuple[1][1]
+    
+    #print(pyautogui.position())
     #print("Bomb")
     #print(found_bomb)
+    for bound in bound_tuple:
+      bound_pos, bound_color = bound
+      bound_x, bound_y = bound_pos
+      if bomb_color == bound_color:
+        print("Match with " + bomb_color, bound_color, bound_pos)  
+        pyautogui.dragTo(bound_x, bound_y, button='left', duration=0.25)
     
 
 
